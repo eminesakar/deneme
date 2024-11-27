@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb
+    env_file:
+      - .env
+    secrets:
+      - mysql_password
+      - credentials
+    networks:
+      - inception
+    volumes:
+      - mariadb:/var/lib/mysql
+    restart: unless-stopped
+  wordpress:
+    container_name: wordpress
+    build: ./requirements/wordpress
+    env_file:
+      - .env
+    secrets:
+      - wordpress_admin_password
+      - mysql_password
+      - credentials
+    networks:
+      - inception
+    volumes:
+      - wordpress:/var/www/html
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    env_file:
+      - .env
+    secrets:
+      - wordpress_admin_password
+      - mysql_password
+      - credentials
+    ports:
+      - "443:443"
+    networks:
+      - inception
+    volumes:
+      - wordpress:/var/www/html
+    depends_on:
+      - wordpress
+    restart: unless-stopped
+
+networks:
+  inception:
+    name: inception
+    driver: bridge
+
+volumes:
+  wordpress:
+    name: wordpress
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/emsakar/data/wordpress
+  mariadb:
+    name: mariadb
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/emsakar/data/mariadb
+secrets:
+  mysql_password:
+    file: /home/emsakar/Masaüstü/inception/secrets/mysql_password.txt
+  wordpress_admin_password:
+    file: /home/emsakar/Masaüstü/inception/secrets/wordpress_admin_password.txt
+  credentials:
+    file: /home/emsakar/Masaüstü/inception/secrets/credentials.txt
